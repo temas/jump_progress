@@ -4,8 +4,8 @@ It stores your progress per map so it should work with any rotation.
 
 The two commands are:
 
-```jp_save``` - Saves your progress point.
-```jp_load``` - Load and teleport to your progress point.
+* ```jp_save``` - Saves your progress point.
+* ```jp_load``` - Load and teleport to your progress point.
 
 Feel free to file feature requests or bug reports.
 

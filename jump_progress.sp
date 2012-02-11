@@ -28,7 +28,7 @@ public OnMapStart()
             return;
         }
 
-        SQL_FastQuery(g_hJP_Db, "CREATE TABLE IF NOT EXISTS jp_locations (player TEXT PRIMARY KEY ON CONFLICT REPLACE, x FLOAT, y FLOAT, z FLOAT)");
+        SQL_FastQuery(g_hJP_Db, "CREATE TABLE IF NOT EXISTS jp_locations (player TEXT PRIMARY KEY ON CONFLICT REPLACE, map TEXT, x FLOAT, y FLOAT, z FLOAT)");
     }
 
     // TODO:  Possibly clean up old player data here
@@ -38,24 +38,27 @@ public OnMapStart()
 public Action:cmdSaveProgress(client, args)
 {
     if(!IsPlayerAlive(client))
-        PrintToChat(client, "\x04[JP]\x01 You must be alive to save your location");    
+        PrintToChat(client, "\x04[JP]\x01 You must be alive to save your progress");    
     else if(!(GetEntityFlags(client) & FL_ONGROUND))
-        PrintToChat(client, "\x04[JP]\x01 You can't save your location on air");
+        PrintToChat(client, "\x04[JP]\x01 You can't save your progress on air");
     else if(GetEntProp(client, Prop_Send, "m_bDucked") == 1)
-        PrintToChat(client, "\x04[JP]\x01 You can't save your location ducked");
+        PrintToChat(client, "\x04[JP]\x01 You can't save your progress ducked");
     else
     {
+        PrintToChat(client, "\x04[JP]\x01 Saving your progress, please wait...");
         decl Float:fLocation[3];
         GetClientAbsOrigin(client, fLocation);
         decl String:sIdentity[20], String:saveQuery[256];
         if (!GetClientAuthString(client, sIdentity, sizeof(sIdentity)))
         {
-            PrintToChat(client, "\x04[JP]\x01 Unable to save your location.");
+            PrintToChat(client, "\x04[JP]\x01 Unable to save your progress.");
             return;
         }
-        Format(saveQuery, sizeof(saveQuery), "INSERT INTO jp_locations (player, x, y, z) VALUES('%s', %f, %f, %f)", sIdentity, fLocation[0], fLocation[1], fLocation[2]);
+        decl String:mapName[128];
+        GetCurrentMap(mapName, sizeof(mapName));
+        Format(saveQuery, sizeof(saveQuery), "INSERT INTO jp_locations (player, map, x, y, z) VALUES('%s', '%s', %f, %f, %f)", sIdentity, mapName, fLocation[0], fLocation[1], fLocation[2]);
         SQL_FastQuery(g_hJP_Db, saveQuery);
-        PrintToChat(client, "\x04[JP]\x01 Your location has been saved");
+        PrintToChat(client, "\x04[JP]\x01 Your progress has been saved.");
     }
 }
 
@@ -71,11 +74,13 @@ public Action:cmdLoadProgress(client, args)
             PrintToChat(client, "\x04[JP]\x01 Unable to load your location.");
             return;
         }
-        Format(loadQuery, sizeof(loadQuery), "SELECT * FROM jp_locations WHERE player='%s'", sIdentity);
+        decl String:mapName[128];
+        GetCurrentMap(mapName, sizeof(mapName));
+        Format(loadQuery, sizeof(loadQuery), "SELECT * FROM jp_locations WHERE player='%s' AND map='%s'", sIdentity, mapName);
         new Handle:query = SQL_Query(g_hJP_Db, loadQuery);
-        if (!query || !SQL_FetchRow(query))
+        if (!query || SQL_GetRowCount(query) == 0 || !SQL_FetchRow(query))
         {
-            PrintToChat(client, "\x04[JP]\x01 Unable to load your location.");
+            PrintToChat(client, "\x04[JP]\x01 Unable to load your progress.");
             return;
         }
 
