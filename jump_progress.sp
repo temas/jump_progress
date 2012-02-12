@@ -28,7 +28,7 @@ public OnMapStart()
             return;
         }
 
-        SQL_FastQuery(g_hJP_Db, "CREATE TABLE IF NOT EXISTS jp_locations (player TEXT PRIMARY KEY ON CONFLICT REPLACE, map TEXT, x FLOAT, y FLOAT, z FLOAT)");
+        SQL_FastQuery(g_hJP_Db, "CREATE TABLE IF NOT EXISTS jp_locations (player TEXT PRIMARY KEY ON CONFLICT REPLACE, x FLOAT, y FLOAT, z FLOAT)");
     }
 
     // TODO:  Possibly clean up old player data here
@@ -56,7 +56,8 @@ public Action:cmdSaveProgress(client, args)
         }
         decl String:mapName[128];
         GetCurrentMap(mapName, sizeof(mapName));
-        Format(saveQuery, sizeof(saveQuery), "INSERT INTO jp_locations (player, map, x, y, z) VALUES('%s', '%s', %f, %f, %f)", sIdentity, mapName, fLocation[0], fLocation[1], fLocation[2]);
+        
+        Format(saveQuery, sizeof(saveQuery), "INSERT INTO jp_locations (player, x, y, z) VALUES('%s/%s/%d', %f, %f, %f)", sIdentity, mapName, GetClientTeam(client), fLocation[0], fLocation[1], fLocation[2]);
         SQL_FastQuery(g_hJP_Db, saveQuery);
         PrintToChat(client, "\x04[JP]\x01 Your progress has been saved.");
     }
@@ -76,7 +77,7 @@ public Action:cmdLoadProgress(client, args)
         }
         decl String:mapName[128];
         GetCurrentMap(mapName, sizeof(mapName));
-        Format(loadQuery, sizeof(loadQuery), "SELECT * FROM jp_locations WHERE player='%s' AND map='%s'", sIdentity, mapName);
+        Format(loadQuery, sizeof(loadQuery), "SELECT * FROM jp_locations WHERE player='%s/%s/%d'", sIdentity, mapName, GetClientTeam(client));
         new Handle:query = SQL_Query(g_hJP_Db, loadQuery);
         if (!query || SQL_GetRowCount(query) == 0 || !SQL_FetchRow(query))
         {
